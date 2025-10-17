@@ -1,54 +1,104 @@
-import Button from "@/components/Button";
-import Button2 from "@/components/Button2";
-import ImageViewer from "@/components/ImageViewer";
-import { useGlobalCounter } from "@/context/GlobalCounterContext";
-import * as ImagePicker from "expo-image-picker";
-import { useState } from "react";
-import { StyleSheet, View } from "react-native";
+import React, { useState } from "react";
+import { Button, StyleSheet, Text, TextInput } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
 
-const PlaceholderImage = require("@/assets/images/images.jpeg");
+import PokemonCard from "@/components/PokemonCard";
+import PokemonSuggestions from "@/components/PokemonSuggestions";
+import { usePokemon } from "@/context/PokemonContext";
+import {
+  PokemonData,
+  fetchPokemon,
+  fetchPokemonLocal,
+  fetchSuggestions,
+} from "@/services/pokeApi";
 
 export default function Index() {
-  const [counter] = useGlobalCounter();
-  const [selectedImage, setSelectedImage] = useState<string | undefined>(
-    undefined
-  );
+  const [pokemonName, setPokemonName] = useState<string>("");
+  const [pokemonData, setPokemonData] = useState<PokemonData | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [searchSource, setSearchSource] = useState<"local" | "api">("api");
 
-  const pickImageAsync = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      allowsEditing: true,
-      quality: 1,
-    });
+  const { setSelectedPokemon } = usePokemon();
 
-    if (!result.canceled) {
-      setSelectedImage(result.assets[0].uri);
+  const handleSearch = async (name?: string) => {
+    const searchName = (name || pokemonName).toLowerCase();
+    if (!searchName) return;
+
+    setSearchSource("api"); // indicamos que la búsqueda es en API pública
+
+    try {
+      setError(null);
+      setSuggestions([]);
+      const data = await fetchPokemon(searchName);
+      setPokemonData(data);
+      setSelectedPokemon(data);
+      console.log(data);
+    } catch {
+      setPokemonData(null);
+      setError("Pokémon no encontrado. ¿Quizás quisiste decir?");
+      const results = await fetchSuggestions(searchName);
+      setSuggestions(results);
+    }
+  };
+
+  const handleSearchLocal = async (name?: string) => {
+    const searchName = (name || pokemonName).toLowerCase();
+    if (!searchName) return;
+
+    setSearchSource("local"); // indicamos que la búsqueda es local
+
+    try {
+      setError(null);
+      setSuggestions([]);
+      const data = await fetchPokemonLocal(searchName);
+      console.log(data);
+      if (data.length > 1) {
+        setSuggestions(data.map((pokemon) => pokemon.name));
+      } else if (data.length === 1) {
+        setPokemonData(data[0]);
+        setSelectedPokemon(data[0]);
+      } else {
+        setPokemonData(null);
+        setError("Pokémon no encontrado en local.");
+      }
+    } catch {
+      setPokemonData(null);
+      setError("Error consultando Pokémon local.");
+    }
+  };
+
+  const handleSuggestionSelect = async (name: string) => {
+    setPokemonName(name);
+    if (searchSource === "local") {
+      await handleSearchLocal(name);
     } else {
-      alert("You did not select any image.");
+      await handleSearch(name);
     }
   };
 
   return (
     <ScrollView contentContainerStyle={styles.scrollContent}>
-      <View style={styles.container}>
-        <View style={styles.imageContainer}>
-          <ImageViewer
-            imgSource={PlaceholderImage}
-            selectedImage={selectedImage}
-          />
-        </View>
+      <Text style={styles.title}>Consulta Pokémon</Text>
 
-        <View style={styles.footerContainer}>
-          <Button2 label="Multiplicar" />
-          <Button
-            theme="primary"
-            label="Selecctiona img"
-            onPress={pickImageAsync}
-          />
-          <Button label={`seleccioname`} onPress={pickImageAsync} />
-        </View>
-      </View>
+      <TextInput
+        style={styles.input}
+        placeholder="Ingresa el nombre del Pokémon"
+        value={pokemonName}
+        onChangeText={setPokemonName}
+      />
+
+      <Button title="Buscar API Publica" onPress={() => handleSearch()} />
+      <Button title="Buscar API Local" onPress={() => handleSearchLocal()} />
+
+      {error && <Text style={styles.error}>{error}</Text>}
+
+      <PokemonSuggestions
+        suggestions={suggestions}
+        onSelect={handleSuggestionSelect}
+      />
+
+      {pokemonData && <PokemonCard pokemon={pokemonData} />}
     </ScrollView>
   );
 }
@@ -56,25 +106,25 @@ export default function Index() {
 const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
+    padding: 20,
+    backgroundColor: "#fff",
   },
-  container: {
-    flex: 1,
-    backgroundColor: "#25292e",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 20,
-  },
-  imageContainer: {
-    width: "100%",
-    maxHeight: 400,
-    alignItems: "center",
-    justifyContent: "center",
+  title: {
+    fontSize: 22,
+    fontWeight: "bold",
     marginBottom: 20,
+    textAlign: "center",
   },
-  footerContainer: {
-    width: "100%",
-    paddingHorizontal: 20,
-    alignItems: "center",
-    gap: 12,
+  input: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 10,
+  },
+  error: {
+    color: "red",
+    marginTop: 10,
+    textAlign: "center",
   },
 });
