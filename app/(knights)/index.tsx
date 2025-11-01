@@ -70,8 +70,7 @@ export default function HomeScreen() {
               knight={knight}
               onPress={() => {
                 setSelectedKnight(knight);
-                router.push("/knights/knightsDetailsScreen");
-                // (navigation as any).navigate("KnightDetailsScreen");
+                router.push("./knightsDetailsScreen");
               }}
             />
           ))}
