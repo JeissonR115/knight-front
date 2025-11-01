@@ -23,7 +23,7 @@
       "output": "dist",
       "favicon": "./assets/images/favicon.png",
       "build": {
-        "baseUrl": "/knight-front/"
+        "baseUrl": "/knight-front"
       }
     },
     "plugins": [
@@ -39,7 +39,8 @@
       ]
     ],
     "experiments": {
-      "typedRoutes": true
+      "typedRoutes": true,
+      "baseUrl":"/knight-front"
     }
   }
 }
