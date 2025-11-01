@@ -63,13 +63,13 @@ const fetchApi = async <T>(url: string, options: RequestInit = {}): Promise<T> =
       throw new Error(`Error ${response.status}: ${response.statusText}`);
     }
 
-    const data: ApiResponse<T> = await response.json();
-    
-    if (!data.success) {
-      throw new Error(data.message || 'Error en la respuesta del servidor');
+    const data: HxHCharacter = await response.json();
+    console.log('API Response:', data);
+    if (!data) {
+      throw new Error( 'Error en la respuesta del servidor');
     }
 
-    return data.data as T;
+    return data as T;
   } catch (error) {
     console.error('API Error:', error);
     throw error;
