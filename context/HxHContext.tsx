@@ -1,6 +1,15 @@
-// contexts/HxHContext.tsx
+// context/HxHContext.tsx
+import {
+  createHxHCharacter,
+  CreateHxHCharacterDTO,
+  deleteHxHCharacter,
+  fetchHxHCharacters,
+  HxHCharacter,
+  HxHCharacterFilters,
+  updateHxHCharacter,
+  UpdateHxHCharacterDTO
+} from '@/services/HxHApi';
 import React, { createContext, ReactNode, useContext, useReducer } from 'react';
-import { fetchMongoHxHCharacters, fetchSQLHxHCharacters, HxHCharacter, HxHCharacterFilters } from '../services/HxHApi';
 
 // Estado del contexto
 interface HxHState {
@@ -24,15 +33,15 @@ type HxHAction =
   | { type: 'UPDATE_CHARACTER'; payload: HxHCharacter }
   | { type: 'DELETE_CHARACTER'; payload: string };
 
-// Context
+// Context Type
 interface HxHContextType {
   state: HxHState;
   fetchCharacters: (filters?: HxHCharacterFilters) => Promise<void>;
   selectCharacter: (character: HxHCharacter | null) => void;
   toggleDatabase: () => void;
   setFilters: (filters: HxHCharacterFilters) => void;
-  addCharacter: (character: Omit<HxHCharacter, 'id'>) => Promise<void>;
-  updateCharacter: (id: string, character: Partial<HxHCharacter>) => Promise<void>;
+  addCharacter: (characterData: CreateHxHCharacterDTO) => Promise<HxHCharacter>;
+  updateCharacter: (id: string, characterData: UpdateHxHCharacterDTO) => Promise<HxHCharacter>;
   deleteCharacter: (id: string) => Promise<void>;
   clearError: () => void;
 }
@@ -98,10 +107,7 @@ export const HxHProvider: React.FC<HxHProviderProps> = ({ children }) => {
       dispatch({ type: 'SET_LOADING', payload: true });
       dispatch({ type: 'SET_ERROR', payload: null });
 
-      const characters = state.useSQL
-        ? await fetchSQLHxHCharacters(filters || state.filters)
-        : await fetchMongoHxHCharacters(filters || state.filters);
-
+      const characters = await fetchHxHCharacters(filters || state.filters, state.useSQL);
       dispatch({ type: 'SET_CHARACTERS', payload: characters });
     } catch (error) {
       dispatch({
@@ -127,55 +133,46 @@ export const HxHProvider: React.FC<HxHProviderProps> = ({ children }) => {
     fetchCharacters(filters);
   };
 
-  const addCharacter = async (characterData: Omit<HxHCharacter, 'id'>) => {
+  const addCharacter = async (characterData: CreateHxHCharacterDTO): Promise<HxHCharacter> => {
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
       
-      // Aquí iría la llamada a tu API para crear el personaje
-      // Por ahora simulamos la creación
-      const newCharacter: HxHCharacter = {
-        ...characterData,
-        id: Date.now().toString(), // ID temporal
-      };
-      
+      const newCharacter = await createHxHCharacter(characterData, state.useSQL);
       dispatch({ type: 'ADD_CHARACTER', payload: newCharacter });
+      
+      return newCharacter;
     } catch (error) {
-      dispatch({
-        type: 'SET_ERROR',
-        payload: error instanceof Error ? error.message : 'Error adding character'
-      });
+      const errorMessage = error instanceof Error ? error.message : 'Error adding character';
+      dispatch({ type: 'SET_ERROR', payload: errorMessage });
+      throw error;
     }
   };
 
-  const updateCharacter = async (id: string, characterData: Partial<HxHCharacter>) => {
+  const updateCharacter = async (id: string, characterData: UpdateHxHCharacterDTO): Promise<HxHCharacter> => {
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
       
-      // Aquí iría la llamada a tu API para actualizar
-      // Por ahora simulamos la actualización
-      const updatedCharacter = { ...characterData, id } as HxHCharacter;
-      
+      const updatedCharacter = await updateHxHCharacter(id, characterData, state.useSQL);
       dispatch({ type: 'UPDATE_CHARACTER', payload: updatedCharacter });
+      
+      return updatedCharacter;
     } catch (error) {
-      dispatch({
-        type: 'SET_ERROR',
-        payload: error instanceof Error ? error.message : 'Error updating character'
-      });
+      const errorMessage = error instanceof Error ? error.message : 'Error updating character';
+      dispatch({ type: 'SET_ERROR', payload: errorMessage });
+      throw error;
     }
   };
 
-  const deleteCharacter = async (id: string) => {
+  const deleteCharacter = async (id: string): Promise<void> => {
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
       
-      // Aquí iría la llamada a tu API para eliminar
-      
+      await deleteHxHCharacter(id, state.useSQL);
       dispatch({ type: 'DELETE_CHARACTER', payload: id });
     } catch (error) {
-      dispatch({
-        type: 'SET_ERROR',
-        payload: error instanceof Error ? error.message : 'Error deleting character'
-      });
+      const errorMessage = error instanceof Error ? error.message : 'Error deleting character';
+      dispatch({ type: 'SET_ERROR', payload: errorMessage });
+      throw error;
     }
   };
 

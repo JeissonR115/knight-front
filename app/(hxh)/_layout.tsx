@@ -21,6 +21,20 @@ export default function HxHLayout() {
             headerShown: false 
           }} 
         />
+        <Stack.Screen 
+          name="CreateCharacterScreen" 
+          options={{ 
+            title: 'Crear Personaje',
+            headerShown: false 
+          }} 
+        />
+        <Stack.Screen 
+          name="EditCharacterScreen" 
+          options={{ 
+            title: 'Editar Personaje',
+            headerShown: false 
+          }} 
+        />
       </Stack>
     </HxHProvider>
   );
