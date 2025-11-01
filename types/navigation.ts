@@ -1,7 +1,6 @@
-// types/navigation.ts
-import { Film } from "@/services/gibliApi";
+import { Knight } from "@/services/knightApi";
 
 export type RootStackParamList = {
-  Home: undefined;
-  FilmDetails: { film: Film };
+  Home: undefined; 
+  KnightDetails: { knight: Knight }; 
 };

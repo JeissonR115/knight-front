@@ -12,6 +12,7 @@ export default function RootLayout() {
         <Stack>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="ghibli" options={{ headerShown: false }} />
+          <Stack.Screen name="knights" options={{ headerShown: false }} />
         </Stack></UserProvider>
       </PokemonProvider>
     </GestureHandlerRootView>
