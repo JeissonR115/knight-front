@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "StickerSmash",
-    "slug": "StickerSmash",
+    "name": "knight-front",
+    "slug": "knight-front",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "stickersmash",
+    "scheme": "knightfront",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -20,8 +20,11 @@
     },
     "web": {
       "bundler": "metro",
-      "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "output": "dist",
+      "favicon": "./assets/images/favicon.png",
+      "build": {
+        "baseUrl": "/knight-front/"
+      }
     },
     "plugins": [
       "expo-router",
@@ -37,6 +40,9 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "homepage": "https://jeissonr115.github.io/knight-front"
     }
   }
 }
