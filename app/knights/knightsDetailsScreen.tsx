@@ -1,6 +1,4 @@
 import { useKnight } from "@/context/KnightContext";
-import { RootStackParamList } from "@/types/navigation";
-import { RouteProp, useRoute } from "@react-navigation/native";
 import React from "react";
 import {
   Image,
@@ -11,11 +9,8 @@ import {
   View,
 } from "react-native";
 
-// Tipo de la ruta
-type KnightDetailsRouteProp = RouteProp<RootStackParamList, "KnightDetails">;
 
 export default function KnightDetailsScreen() {
-  const route = useRoute<KnightDetailsRouteProp>();
   const { selectedKnight: knight } = useKnight();
 
   if (!knight) {
