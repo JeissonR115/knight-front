@@ -205,17 +205,11 @@ export default function SearchScreen() {
         </View>
       </ScrollView>
       <TouchableOpacity 
-  style={styles.floatingCreateButton}
-  onPress={() => router.push('./CreateCharacterScreen')}
->
-  <Text style={styles.floatingCreateText}>+</Text>
-</TouchableOpacity>
-<TouchableOpacity 
-  style={styles.floatingCreateButton}
-  onPress={() => router.push('./CreateCharacterScreen')}
->
-  <Text style={styles.floatingCreateText}>+</Text>
-</TouchableOpacity>
+        style={styles.floatingCreateButton}
+        onPress={() => router.push('./CreateCharacterScreen')}
+      >
+        <Text style={styles.floatingCreateText}>+</Text>
+      </TouchableOpacity> 
     </SafeAreaView>
   );
 }

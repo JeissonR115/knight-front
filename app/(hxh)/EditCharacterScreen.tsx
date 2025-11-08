@@ -4,24 +4,24 @@ import { HxHCharacter, UpdateHxHCharacterDTO } from '@/services/HxHApi';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    Image,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Image,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 
 export default function EditCharacterScreen() {
-  const { state, updateCharacter } = useHxH();
+  const { state, updateCharacter, deleteCharacter } = useHxH();
   const params = useLocalSearchParams();
   const [loading, setLoading] = useState(false);
   const [character, setCharacter] = useState<HxHCharacter | null>(null);
-  
   const [form, setForm] = useState<UpdateHxHCharacterDTO>({
     name: '',
     age: 0,
@@ -29,6 +29,21 @@ export default function EditCharacterScreen() {
     weight: 0,
     img: '',
   });
+  const showAlert = (title: string, message?: string, buttons?: any[]) => {
+  if (Platform.OS === 'web') {
+    // En web usamos window.alert (simple) o puedes implementar un modal custom
+    if (!buttons || buttons.length === 0) {
+      window.alert(`${title}\n\n${message || ''}`);
+    } else {
+      // window.confirm para simular botones simples (OK / Cancel)
+      const ok = window.confirm(`${title}\n\n${message || ''}`);
+      console.log('Alert buttons:', buttons, 'User response:', ok);
+      if (ok && buttons[0]?.onPress) buttons[0].onPress();
+    }
+  } else {
+    Alert.alert(title, message, buttons);
+  }
+};
 
   const characterId = params.characterId as string;
 
@@ -60,7 +75,7 @@ export default function EditCharacterScreen() {
 
     // Validaciones
     if (!form.name?.trim()) {
-      Alert.alert('Error', 'El nombre es requerido');
+      showAlert('Error', 'El nombre es requerido');
       return;
     }
 
@@ -78,7 +93,7 @@ export default function EditCharacterScreen() {
 
       await updateCharacter(character.id, updateData);
       
-      Alert.alert(
+      showAlert(
         'Éxito',
         'Personaje actualizado correctamente',
         [
@@ -89,65 +104,75 @@ export default function EditCharacterScreen() {
         ]
       );
     } catch (error) {
-      Alert.alert('Error', 'No se pudo actualizar el personaje');
+      showAlert('Error', 'No se pudo actualizar el personaje');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDelete = () => {
-    if (!character) return;
+const handleDelete = () => {
+  if (!character) return;
 
-    Alert.alert(
-      'Eliminar Personaje',
-      `¿Estás seguro de que quieres eliminar a ${character.name}? Esta acción no se puede deshacer.`,
-      [
-        {
-          text: 'Cancelar',
-          style: 'cancel',
-        },
-        {
-          text: 'Eliminar',
-          style: 'destructive',
-          onPress: () => deleteCharacter(character.id),
-        },
-      ]
-    );
-  };
+  showAlert(
+    'Eliminar Personaje',
+    `¿Estás seguro de que quieres eliminar a ${character.name}? Esta acción no se puede deshacer.`,
+    [
+      {
+        text: 'Eliminar',
+        style: 'destructive',
+        onPress: () => handleConfirmDelete(character.id),
+      },
+      ,
+    ]
+  );
+};
 
-  const deleteCharacter = async (id:String) => {
-    if (!id) return;
+const handleConfirmDelete = async (id: string) => {
+  if (!id) return;
 
-    setLoading(true);
-    try {
-      await deleteCharacter(id);
-      Alert.alert(
+  setLoading(true);
+  try {
+      const response = await deleteCharacter(String(id));
+      console.log('Delete response:', response);
+      showAlert(
         'Éxito',
         'Personaje eliminado correctamente',
         [
           {
             text: 'OK',
-            onPress: () => router.back()
+            onPress: () => router.push('/')
           }
         ]
       );
-    } catch (error) {
-      Alert.alert('Error', 'No se pudo eliminar el personaje');
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  if (!character) {
-    return (
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#f5dd4b" />
-          <Text style={styles.loadingText}>Cargando personaje...</Text>
-        </View>
-      </SafeAreaView>
-    );
+  } catch (error) {
+    console.error('Error al eliminar personaje:', error);
+    showAlert('Error', 'No se pudo eliminar el personaje');
+  } finally {
+    setLoading(false);
   }
+};
+
+
+
+    if (!character) {
+      return (
+        <SafeAreaView style={styles.safeArea}>
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorTitle}>Personaje no encontrado</Text>
+            <Text style={styles.errorText}>
+              No se pudo cargar la información del personaje.
+            </Text>
+            <TouchableOpacity 
+              style={styles.backButton}
+              onPress={() => router.back()}
+            >
+              <Text style={styles.backButtonText}>Volver</Text>
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
+      );
+    }
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -393,5 +418,34 @@ const styles = StyleSheet.create({
     color: '#cccccc',
     marginTop: 12,
     fontSize: 16,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    marginBottom: 12,
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#cccccc',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  backButton: {
+    backgroundColor: '#f5dd4b',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  backButtonText: {
+    color: '#000',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

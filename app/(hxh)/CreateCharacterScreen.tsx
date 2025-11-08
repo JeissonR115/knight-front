@@ -4,16 +4,17 @@ import { CreateHxHCharacterDTO } from '@/services/HxHApi';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    Image,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Image,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 export default function CreateCharacterScreen() {
@@ -24,54 +25,77 @@ export default function CreateCharacterScreen() {
     age: 0,
     height: 0,
     weight: 0,
-    img: '',
+    img: ''
   });
-
+const showAlert = (title: string, message: string) => {
+  if (Platform.OS === 'web') {
+    alert(`${title}\n\n${message}`);
+  } else {
+    Alert.alert(title, message);
+  }
+};
+  // Convierte a number cuando corresponde
   const handleChange = (field: keyof CreateHxHCharacterDTO, value: string) => {
-    setForm(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    if (field === 'age' || field === 'height' || field === 'weight') {
+      const numeric = value.replace(/[^\d.-]/g, '');
+      setForm(prev => ({
+        ...prev,
+        [field]: numeric === '' ? 0 : Number(numeric),
+      }));
+    } else {
+      setForm(prev => ({
+        ...prev,
+        [field]: value,
+      }));
+    }
   };
 
   const handleSubmit = async () => {
+    const errorMessage: string[] = [];
+    
     // Validaciones
-    if (!form.name.trim()) {
-      Alert.alert('Error', 'El nombre es requerido');
-      return;
+    
+    if (!form.name || !form.name.trim()) {
+      errorMessage.push('El nombre es requerido');
     }
     if (!form.age || !form.height || !form.weight) {
-      Alert.alert('Error', 'Todos los campos numéricos son requeridos');
-      return;
+      errorMessage.push('Todos los campos numéricos son requeridos y deben ser mayores que 0');
     }
-    if (!form.img.trim()) {
-      Alert.alert('Error', 'La URL de la imagen es requerida');
+    if (!form.img || !form.img.trim()) {
+      errorMessage.push('La URL de la imagen es requerida');
+    }
+    if (errorMessage.length > 0) {
+      showAlert('Error de Validación', errorMessage.join('\n'));
       return;
     }
 
     setLoading(true);
     try {
-      const characterData = {
+      // Aseguramos que los tipos sean numbers
+      const characterData: CreateHxHCharacterDTO = {
         ...form,
-        age: (form.age),
-        height: (form.height),
-        weight: (form.weight),
+        age: Number(form.age),
+        height: Number(form.height),
+        weight: Number(form.weight),
       };
 
-      await addCharacter(characterData);
-      
-      Alert.alert(
-        'Éxito',
-        'Personaje creado correctamente',
-        [
-          {
-            text: 'OK',
-            onPress: () => router.back()
-          }
-        ]
-      );
-    } catch (error) {
-      Alert.alert('Error', 'No se pudo crear el personaje');
+      // Si addCharacter retorna algo útil, puedes usarlo aquí.
+      const result = await addCharacter(characterData);
+
+      // Mostrar confirmación y navegar. Uso router.replace a la ruta de búsqueda.
+      // Cambia '/(hxh)/Search' por la ruta real de tu pantalla de búsqueda.
+      Alert.alert('Éxito', 'Personaje creado correctamente');
+      // redirigir inmediatamente (no depender del OK)
+      try {
+        // intenta ir a la pantalla de búsqueda; si no existe, vuelve atrás
+        router.replace('/');
+      } catch (navErr) {
+        router.back();
+      }
+    } catch (error: any) {
+      const msg = error?.message ?? 'No se pudo crear el personaje';
+      Alert.alert('Error', msg);
+      console.error('CreateCharacter error:', error);
     } finally {
       setLoading(false);
     }
@@ -79,7 +103,7 @@ export default function CreateCharacterScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView style={styles.container}>
+      <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
         <View style={styles.header}>
           <Text style={styles.title}>Crear Personaje</Text>
           <Text style={styles.subtitle}>Agrega un nuevo personaje a la base de datos</Text>
@@ -95,6 +119,7 @@ export default function CreateCharacterScreen() {
               onChangeText={(value) => handleChange('name', value)}
               placeholder="Ej: Gon Freecss"
               placeholderTextColor="#666"
+              autoCapitalize="words"
             />
           </View>
 
@@ -103,7 +128,7 @@ export default function CreateCharacterScreen() {
             <Text style={styles.label}>Edad *</Text>
             <TextInput
               style={styles.input}
-              value={String(form.age)}
+              value={form.age ? String(form.age) : ''}
               onChangeText={(value) => handleChange('age', value)}
               placeholder="Ej: 12"
               placeholderTextColor="#666"
@@ -116,7 +141,7 @@ export default function CreateCharacterScreen() {
             <Text style={styles.label}>Altura (cm) *</Text>
             <TextInput
               style={styles.input}
-              value={String(form.height)}
+              value={form.height ? String(form.height) : ''}
               onChangeText={(value) => handleChange('height', value)}
               placeholder="Ej: 154"
               placeholderTextColor="#666"
@@ -129,7 +154,7 @@ export default function CreateCharacterScreen() {
             <Text style={styles.label}>Peso (kg) *</Text>
             <TextInput
               style={styles.input}
-              value={String(form.weight)}
+              value={form.weight ? String(form.weight) : ''}
               onChangeText={(value) => handleChange('weight', value)}
               placeholder="Ej: 45"
               placeholderTextColor="#666"
@@ -146,20 +171,26 @@ export default function CreateCharacterScreen() {
               onChangeText={(value) => handleChange('img', value)}
               placeholder="https://ejemplo.com/imagen.jpg"
               placeholderTextColor="#666"
+              autoCapitalize="none"
             />
           </View>
 
           {/* Vista previa de imagen */}
-          {form.img && (
+          {form.img ? (
             <View style={styles.previewContainer}>
               <Text style={styles.label}>Vista Previa:</Text>
               <Image
                 source={{ uri: form.img }}
                 style={styles.previewImage}
                 resizeMode="cover"
+                onError={() => {
+                  // Si la imagen falla, muestra un alert ligero (opcional)
+                  // No mostramos alert agresivo para no molestar al usuario
+                  console.warn('Imagen no cargó:', form.img);
+                }}
               />
             </View>
-          )}
+          ) : null}
 
           {/* Botones */}
           <View style={styles.buttonContainer}>
@@ -172,12 +203,12 @@ export default function CreateCharacterScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.button, styles.submitButton]}
+              style={[styles.button, styles.submitButton, loading && { opacity: 0.7 }]}
               onPress={handleSubmit}
               disabled={loading}
             >
               {loading ? (
-                <ActivityIndicator size="small" color="#fff" />
+                <ActivityIndicator size="small" color="#000" />
               ) : (
                 <Text style={styles.submitButtonText}>Crear Personaje</Text>
               )}
@@ -248,7 +279,7 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     flexDirection: 'row',
-    gap: 12,
+    // gap no es compatible en RN en muchas versiones, usa margin en los botones si lo necesitas
     marginTop: 24,
   },
   button: {
@@ -260,6 +291,7 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     backgroundColor: '#666',
+    marginRight: 12,
   },
   submitButton: {
     backgroundColor: '#f5dd4b',

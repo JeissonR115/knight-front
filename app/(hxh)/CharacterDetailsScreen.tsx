@@ -185,6 +185,15 @@ export default function CharacterDetailsScreen() {
       >
         <Text style={styles.floatingBackText}>← Volver</Text>
       </TouchableOpacity>
+      <TouchableOpacity 
+        style={styles.floatingCreateButton}
+        onPress={() => router.push({
+          pathname: './EditCharacterScreen',
+          params: { characterId: character.id }
+        })}
+      >
+        <Text style={styles.floatingCreateText}>✏️</Text>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }
@@ -352,4 +361,25 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+  floatingCreateButton: {
+  position: 'absolute',
+  bottom: 30,
+  right: 30,
+  backgroundColor: '#f5dd4b',
+  width: 60,
+  height: 60,
+  borderRadius: 30,
+  alignItems: 'center',
+  justifyContent: 'center',
+  elevation: 8,
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.3,
+  shadowRadius: 4,
+},
+floatingCreateText: {
+  color: '#000',
+  fontSize: 28,
+  fontWeight: 'bold',
+},
 });
